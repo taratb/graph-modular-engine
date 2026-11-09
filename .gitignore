@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local copy of D3.js library (from project spec)
+graph_explorer/static/js/d3.min.js
+graph_explorer/static/js/d3.js
