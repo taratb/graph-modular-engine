@@ -6,7 +6,7 @@ from graph_api.edge import Edge
 
 class TestGraph(unittest.TestCase):
 
-    # for node operations
+    # Node operations
     #____________________________________________________________________
     def test_duplicate_node_does_not_replace_original(self):
         graph = Graph()
@@ -46,8 +46,45 @@ class TestGraph(unittest.TestCase):
         self.assertIs(graph.get_edge("e1"), edge)
 
 
-    # for edge operations
+    # Edge operations
     # ____________________________________________________________________
+
+    def test_missing_endpoint_rejects_edge(self):
+        graph = Graph()
+        graph.add_node(Node("n1"))
+
+        with self.assertRaises(ValueError):
+            graph.add_edge(Edge("e1", "n1", "missing"))
+
+        self.assertEqual(graph.get_edges(), [])
+
+    def test_duplicate_edge_id_does_not_replace_original(self):
+        graph = Graph()
+        for node_id in ("n1", "n2", "n3"):
+            graph.add_node(Node(node_id))
+
+        original = Edge("e1", "n1", "n2")
+        graph.add_edge(original)
+
+        with self.assertRaises(ValueError):
+            graph.add_edge(Edge("e1", "n2", "n3"))
+
+        self.assertEqual(graph.get_edges(), [original])
+
+
+    def test_parallel_edges_are_rejected(self):
+        for directed in (False, True):
+            with self.subTest(directed=directed):
+                graph = Graph(directed=directed)
+                graph.add_node(Node("n1"))
+                graph.add_node(Node("n2"))
+                original = Edge("e1", "n1", "n2")
+                graph.add_edge(original)
+
+                with self.assertRaises(ValueError):
+                    graph.add_edge(Edge("e2", "n1", "n2"))
+
+                self.assertEqual(graph.get_edges(), [original])
 
     def test_removing_edge_preserves_nodes(self):
         graph = Graph()
@@ -68,14 +105,10 @@ class TestGraph(unittest.TestCase):
         self.assertIs(graph.get_node("n1"), source)
         self.assertIs(graph.get_node("n2"), target)
 
-    def test_missing_endpoint_rejects_edge(self):
-        graph = Graph()
-        graph.add_node(Node("n1"))
 
-        with self.assertRaises(ValueError):
-            graph.add_edge(Edge("e1", "n1", "missing"))
 
-        self.assertEqual(graph.get_edges(), [])
+    # Graph direction
+    # ____________________________________________________________________
 
     def test_directed_graph_allows_opposite_edges(self):
         graph = Graph(directed=True)
@@ -102,6 +135,12 @@ class TestGraph(unittest.TestCase):
 
         self.assertEqual(graph.get_edges(), [original])
 
+
+
+
+    # Graph structure
+    # ____________________________________________________________________
+
     def test_self_loop_blocks_node_removal(self):
         graph = Graph()
         graph.add_node(Node("n1"))
@@ -118,30 +157,38 @@ class TestGraph(unittest.TestCase):
 
         self.assertEqual(graph.get_nodes(), [])
 
-
-    def test_duplicate_edge_id_does_not_replace_original(self):
-        graph = Graph()
-        for node_id in ("n1", "n2", "n3"):
-            graph.add_node(Node(node_id))
-
-        original = Edge("e1", "n1", "n2")
-        graph.add_edge(original)
-
-        with self.assertRaises(ValueError):
-            graph.add_edge(Edge("e1", "n2", "n3"))
-
-        self.assertEqual(graph.get_edges(), [original])
-
-    def test_parallel_edges_are_rejected(self):
+    def test_connected_graph_can_be_extended_with_cycle(self):
         for directed in (False, True):
             with self.subTest(directed=directed):
                 graph = Graph(directed=directed)
-                graph.add_node(Node("n1"))
-                graph.add_node(Node("n2"))
-                original = Edge("e1", "n1", "n2")
-                graph.add_edge(original)
+                for node_id in ("n1", "n2", "n3"):
+                    graph.add_node(Node(node_id))
 
-                with self.assertRaises(ValueError):
-                    graph.add_edge(Edge("e2", "n1", "n2"))
+                graph.add_edge(Edge("e1", "n1", "n2"))
+                graph.add_edge(Edge("e2", "n2", "n3"))
 
-                self.assertEqual(graph.get_edges(), [original])
+                self.assertEqual(len(graph.get_nodes()), 3)
+                self.assertEqual(len(graph.get_edges()), 2)
+
+                graph.add_edge(Edge("e3", "n3", "n1"))
+
+                self.assertEqual(len(graph.get_edges()), 3)
+                self.assertEqual(graph.get_edge("e3").get_target_id(), "n1")
+
+    def test_disconnected_graph_preserves_all_components(self):
+        for directed in (False, True):
+            with self.subTest(directed=directed):
+                graph = Graph(directed=directed)
+                for node_id in ("n1", "n2", "n3", "n4", "n5"):
+                    graph.add_node(Node(node_id))
+
+                graph.add_edge(Edge("e1", "n1", "n2"))
+                graph.add_edge(Edge("e2", "n3", "n4"))
+
+                node_ids = {node.get_id() for node in graph.get_nodes()}
+                edge_ids = {edge.get_id() for edge in graph.get_edges()}
+
+                self.assertEqual(
+                    node_ids, {"n1", "n2", "n3", "n4", "n5"}
+                )
+                self.assertEqual(edge_ids, {"e1", "e2"})
