@@ -1,0 +1,18 @@
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graph-modular-engine-stub-datasource"
+version = "0.1.0"
+dependencies = [
+    "graph-modular-engine-api==0.1.0"
+]
+
+[project.entry-points."graph_modular_engine.data_sources"]
+stub = "stub_source.plugin:StubDataSource"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["stub_source*"]

@@ -1,0 +1,18 @@
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graph-modular-engine-stub-visualizer"
+version = "0.1.0"
+dependencies = [
+    "graph-modular-engine-api==0.1.0"
+]
+
+[project.entry-points."graph_modular_engine.visualizers"]
+stub = "stub_visualizer.plugin:StubVisualizer"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["stub_visualizer*"]
