@@ -12,7 +12,7 @@ class GraphElement:
     def get_id(self) -> str:
         return self._id
 
-    def set_attributes(self, name:str, value:AttributeValue) -> None:
+    def set_attribute(self, name:str, value:AttributeValue) -> None:
         if not isinstance(name, str):
             raise TypeError("name must be a string")
 
